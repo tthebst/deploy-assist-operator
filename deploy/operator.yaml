@@ -16,7 +16,7 @@ spec:
       containers:
         - name: deploy-assist-operator
           # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: tthebst/deploy-operator:v0.0.1
           command:
           - deploy-assist-operator
           imagePullPolicy: Always
