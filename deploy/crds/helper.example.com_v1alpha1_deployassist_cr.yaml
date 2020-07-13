@@ -1,7 +1,0 @@
-apiVersion: helper.example.com/v1alpha1
-kind: Deployassist
-metadata:
-  name: example-deployassist
-spec:
-  # Add fields here
-  size: 3
