@@ -4,4 +4,6 @@ metadata:
   name: deployassist-sample
 spec:
   # Add fields here
-  foo: bar
+  files:
+    - "./some-resource.yaml"
+    - "./some-resourc2e.yaml"

@@ -29,13 +29,14 @@ type DeployassistSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Deployassist. Edit Deployassist_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Files []string `json:"files,omitempty"`
 }
 
 // DeployassistStatus defines the observed state of Deployassist
 type DeployassistStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	AppliedFiles []string `json:"files,omitempty"`
 }
 
 // +kubebuilder:object:root=true
