@@ -87,7 +87,7 @@ func (r *DeployassistReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		// The object is being deleted
 		if containsString(deployAssist.ObjectMeta.Finalizers, myFinalizerName) {
 			// our finalizer is present, so lets handle any external dependency
-			if err := r.deleteExternalResources(&deployAssist); err != nil {
+			if err := r.deleteUnmanagedController(&deployAssist); err != nil {
 				// if fail to delete the external dependency here, return with error
 				// so that it can be retried
 				return ctrl.Result{}, err
@@ -103,15 +103,12 @@ func (r *DeployassistReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		// Stop reconciliation as the item is being deleted
 		return ctrl.Result{}, nil
 	}
-	fmt.Println("hi")
-	fmt.Println(deployAssist)
-	fmt.Println("REQUEST NAMESPACE")
-	fmt.Println(r.Controllers)
-	if len(r.Controllers) > 0 {
-		r.Controllers = r.Controllers[:len(r.Controllers)-1]
+
+	//only add controller if not exists yet
+	if !containsString(controllerNames(r.Controllers), deployAssist.Name) {
+		fmt.Println("adding controllelr")
+		r.Controllers = append(r.Controllers, NewUnmanagedController(r.Mgr, deployAssist.Name))
 	}
-	fmt.Println(r.Controllers)
-	r.Controllers = append(r.Controllers, NewUnmanagedController(r.Mgr, deployAssist.Name))
 
 	return ctrl.Result{}, nil
 }
@@ -122,14 +119,12 @@ func (r *DeployassistReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&deployassistv1alpha1.Deployassist{}).Complete(r)
 }
 
-func (r *DeployassistReconciler) deleteExternalResources(deployAssist *deployassistv1alpha1.Deployassist) error {
-
+func (r *DeployassistReconciler) deleteUnmanagedController(deployAssist *deployassistv1alpha1.Deployassist) error {
 	for i, controller := range r.Controllers {
 		if controller.Name == deployAssist.Name {
-			close(controller.Stop)
 			r.Controllers = append(r.Controllers[:i], r.Controllers[i+1:]...)
+			close(controller.Stop)
 		}
-
 	}
 	return nil
 }
@@ -184,6 +179,14 @@ func NewUnmanagedController(mgr manager.Manager, name string) CrController {
 		Stop:       stop,
 		Name:       name,
 	}
+}
+
+func controllerNames(controllers []CrController) []string {
+	controllerNames := make([]string, len(controllers))
+	for i, controller := range controllers {
+		controllerNames[i] = controller.Name
+	}
+	return controllerNames
 }
 
 func containsString(slice []string, s string) bool {
