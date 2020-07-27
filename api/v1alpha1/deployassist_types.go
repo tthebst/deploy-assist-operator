@@ -30,6 +30,8 @@ type DeployassistSpec struct {
 
 	// Foo is an example field of Deployassist. Edit Deployassist_types.go to remove/update
 	Files []string `json:"files,omitempty"`
+	Watch string   `json:"watch"`
+	Event string   `json:"event"`
 }
 
 // DeployassistStatus defines the observed state of Deployassist

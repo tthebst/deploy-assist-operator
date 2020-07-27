@@ -28,8 +28,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -107,7 +109,7 @@ func (r *DeployassistReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 	//only add controller if not exists yet
 	if !containsString(controllerNames(r.Controllers), deployAssist.Name) {
 		fmt.Println("adding controllelr")
-		r.Controllers = append(r.Controllers, NewUnmanagedController(r.Mgr, deployAssist.Name))
+		r.Controllers = append(r.Controllers, NewUnmanagedController(r.Mgr, &deployAssist))
 	}
 
 	return ctrl.Result{}, nil
@@ -132,15 +134,11 @@ func (r *DeployassistReconciler) deleteUnmanagedController(deployAssist *deploya
 // This example creates a new controller named "pod-controller" to watch Pods
 // and call a no-op reconciler. The controller is not added to the provided
 // manager, and must thus be started and stopped by the caller.
-func NewUnmanagedController(mgr manager.Manager, name string) CrController {
-	// mgr is a manager.Manager
-
-	// Configure creates a new controller but does not add it to the supplied
-	// manager.
-	fmt.Println("hfds")
+func NewUnmanagedController(mgr manager.Manager, deployAssist *deployassistv1alpha1.Deployassist) CrController {
 
 	c, err := controller.NewUnmanaged("pod-controller", mgr, controller.Options{
 		Reconciler: reconcile.Func(func(_ reconcile.Request) (reconcile.Result, error) {
+			fmt.Print("recocile function")
 			return reconcile.Result{}, nil
 		}),
 	})
@@ -148,8 +146,30 @@ func NewUnmanagedController(mgr manager.Manager, name string) CrController {
 		log.Error(err, "unable to create pod-controller")
 		os.Exit(1)
 	}
+	fmt.Println(deployAssist.Spec)
+	// make predicate function according to event specified in deployassist
+	p := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			if deployAssist.Spec.Event == "update" {
+				return true
+			}
+			return false
+		},
+		CreateFunc: func(e event.CreateEvent) bool {
+			if deployAssist.Spec.Event == "create" {
+				return true
+			}
+			return false
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			if deployAssist.Spec.Event == "delete" {
+				return true
+			}
+			return false
+		},
+	}
 
-	if err := c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForObject{}, p); err != nil {
 		log.Error(err, "unable to watch pods")
 		os.Exit(1)
 	}
@@ -177,7 +197,7 @@ func NewUnmanagedController(mgr manager.Manager, name string) CrController {
 	return CrController{
 		Controller: c,
 		Stop:       stop,
-		Name:       name,
+		Name:       deployAssist.Name,
 	}
 }
 

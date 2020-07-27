@@ -34,12 +34,19 @@ spec:
         spec:
           description: DeployassistSpec defines the desired state of Deployassist
           properties:
+            event:
+              type: string
             files:
               description: Foo is an example field of Deployassist. Edit Deployassist_types.go
                 to remove/update
               items:
                 type: string
               type: array
+            watch:
+              type: string
+          required:
+          - event
+          - watch
           type: object
         status:
           description: DeployassistStatus defines the observed state of Deployassist
