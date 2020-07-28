@@ -169,6 +169,24 @@ func NewUnmanagedController(mgr manager.Manager, deployAssist *deployassistv1alp
 		},
 	}
 
+	switch deployAssist.Spec.Watch {
+	case "namespace":
+		if err := c.Watch(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForObject{}, p); err != nil {
+			log.Error(err, "unable to watch pods")
+			os.Exit(1)
+		}
+	case "secret":
+		if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, p); err != nil {
+			log.Error(err, "unable to watch pods")
+			os.Exit(1)
+		}
+	default:
+		if err := c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForObject{}, p); err != nil {
+			log.Error(err, "unable to watch pods")
+			os.Exit(1)
+		}
+	}
+
 	if err := c.Watch(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForObject{}, p); err != nil {
 		log.Error(err, "unable to watch pods")
 		os.Exit(1)

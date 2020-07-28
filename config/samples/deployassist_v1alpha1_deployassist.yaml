@@ -4,7 +4,7 @@ metadata:
   name: deployassist-sample
 spec:
   # Add fields here
-  watch: namespace
+  watch: secret
   event: create
   files:
     - "./some-resource.yaml"
